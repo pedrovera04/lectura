@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Baloo 2', Nunito, system-ui, sans-serif;
+  /* Fondo suave y alegre para toda la app. */
+  background: linear-gradient(160deg, #eef6ff 0%, #f7fbff 40%, #fef6ff 100%);
+  color: #123471;
+}
+
+/* Respeta a quienes prefieren menos movimiento (accesibilidad). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Foco visible y de alto contraste para navegación con teclado. */
+:focus-visible {
+  outline: 4px solid #1f72ff;
+  outline-offset: 3px;
+  border-radius: 12px;
+}

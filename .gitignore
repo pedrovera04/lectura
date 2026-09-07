@@ -1,0 +1,31 @@
+# Dependencias
+node_modules/
+
+# Builds
+dist/
+build/
+*.tsbuildinfo
+
+# Artefactos que emite `tsc -b` desde vite.config.ts
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
+# Vercel
+.vercel/
+
+# Variables de entorno (¡nunca subir claves!)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

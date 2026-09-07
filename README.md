@@ -34,8 +34,10 @@ El backend es la **misma app** de `backend/src`: `api/index.ts` importa
 
 ## Desarrollo local
 
+Es un **workspace de npm** (`backend` + `frontend`): un solo `npm install`.
+
 ```bash
-npm run install:all        # instala raíz + backend + frontend
+npm install                            # instala backend + frontend (hoisted)
 
 cp backend/.env.example backend/.env   # y completa AZURE_SPEECH_KEY / REGION
 
@@ -64,11 +66,16 @@ git push -u origin main
 ### 2. Importa el repo en Vercel
 
 - **New Project → Import** el repo.
-- **Framework Preset:** `Other` (lo fuerza `vercel.json`).
-- **Root Directory:** `.` (la raíz; no cambies nada).
-- Build & Output los toma de `vercel.json`:
-  - Build Command: `npm run build`
-  - Output Directory: `frontend/dist`
+- **Framework Preset:** `Other` — **no** dejes que quede en `Vite`.
+- **Root Directory:** `./` (la raíz del repo). ⚠️ Si Vercel sugiere `frontend`,
+  **recházalo**: la función de `/api` solo se despliega si está dentro del Root.
+- **Build Command:** `npm run build`
+- **Output Directory:** `dist`
+
+Estos tres últimos valores también están en `vercel.json`, pero conviene
+ponerlos explícitos en el panel para que no gane un preset detectado.
+`npm run build` compila el backend (`backend/dist`), compila el frontend
+y copia su salida a `./dist` (que es lo que Vercel publica).
 
 ### 3. Variables de entorno (Settings → Environment Variables)
 
@@ -89,8 +96,9 @@ Para *Production* y *Preview*:
 
 ### 4. Deploy
 
-Vercel ejecuta `npm install` (raíz) → `npm run build` (compila
-`backend/dist` y `frontend/dist`) → publica el estático y la función.
+Vercel ejecuta `npm install` (workspace: instala backend + frontend) →
+`npm run build` (compila `backend/dist`, compila el frontend y lo copia a
+`./dist`) → publica `./dist` como estático y `api/` como función.
 
 Prueba: `https://<tu-app>.vercel.app/api/health` debe devolver
 `{"status":"ok","azure":true,…}`.
@@ -120,9 +128,10 @@ export default mod.createApp();   // la app Express es (req, res) => …
 ```
 
 - `npm run build:backend` genera `backend/dist/` con `tsc` (ESM, mismos
-  imports `.js`).
-- Vercel empaqueta la función trazando las dependencias desde
-  `package.json` de la raíz (por eso están ahí `express`, `zod`,
-  `microsoft-cognitiveservices-speech-sdk`, etc.).
+  imports `.js`; `declaration: true` para que `api/` tenga tipos).
+- Como es un workspace de npm, las dependencias del backend (`express`,
+  `zod`, `microsoft-cognitiveservices-speech-sdk`, …) quedan en el
+  `node_modules` de la raíz, y Vercel las traza desde ahí al empaquetar
+  la función.
 - `vercel.json` → `rewrites: /api/(.*) → /api`, y Express resuelve la ruta
   original (`/api/health`, `/api/reading/evaluate`).

@@ -4,32 +4,22 @@
   "description": "Monorepo (frontend + backend) de evaluación de lectura oral infantil, listo para desplegar en Vercel.",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "engines": {
-    "node": "20.x"
+    "node": "22.x"
   },
   "scripts": {
-    "install:all": "npm install && npm --prefix backend install && npm --prefix frontend install",
-    "dev:backend": "npm --prefix backend run dev",
-    "dev:frontend": "npm --prefix frontend run dev",
-    "build:backend": "npm --prefix backend ci && npm --prefix backend run build",
-    "build:frontend": "npm --prefix frontend ci && npm --prefix frontend run build",
-    "build": "npm run build:backend && npm run build:frontend",
+    "dev:backend": "npm run dev --workspace backend",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "build:backend": "npm run build --workspace backend",
+    "build:frontend": "npm run build --workspace frontend",
+    "build": "npm run build:backend && npm run build:frontend && node scripts/collect-output.mjs",
     "vercel-build": "npm run build"
   },
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.32.1",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "microsoft-cognitiveservices-speech-sdk": "^1.41.0",
-    "multer": "^2.3.0",
-    "zod": "^3.23.8"
-  },
   "devDependencies": {
-    "@types/cors": "^2.8.17",
-    "@types/express": "^4.17.21",
-    "@types/multer": "^1.4.12",
-    "@types/node": "^20.14.9",
     "@vercel/node": "^3.2.24",
     "typescript": "^5.5.3"
   }

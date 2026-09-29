@@ -35,6 +35,8 @@ export class WavRecorder {
   private chunks: Float32Array[] = [];
   private inputSampleRate = 44100;
   private startTime = 0;
+  /** Analizador de volumen en vivo (solo lectura, no va a los parlantes). */
+  analyser: AnalyserNode | null = null;
 
   async start(): Promise<void> {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -79,6 +81,10 @@ export class WavRecorder {
       this.chunks.push(new Float32Array(input));
     };
 
+    this.analyser = this.audioContext.createAnalyser();
+    this.analyser.fftSize = 128;
+    this.analyser.smoothingTimeConstant = 0.75;
+    this.source.connect(this.analyser);
     this.source.connect(this.processor);
     // Necesario en algunos navegadores para que el processor procese.
     this.processor.connect(this.audioContext.destination);

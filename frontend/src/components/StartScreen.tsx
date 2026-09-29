@@ -10,9 +10,10 @@ const COLORES = [
 
 interface Props {
   onStart: (passage: Passage, studentCode: string) => void;
+  onRubric: () => void;
 }
 
-export function StartScreen({ onStart }: Props) {
+export function StartScreen({ onStart, onRubric }: Props) {
   const [selectedId, setSelectedId] = useState(PASSAGES[0].id);
   const [own, setOwn] = useState('');
   const [code, setCode] = useState('');
@@ -132,6 +133,9 @@ export function StartScreen({ onStart }: Props) {
             <svg viewBox="0 0 24 24" width="22" height="22"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" /></svg>
           </span>
           Comenzar a leer
+        </button>
+        <button type="button" className="btn btn--texto" onClick={onRubric}>
+          Configurar rúbrica de evaluación
         </button>
       </div>
     </section>

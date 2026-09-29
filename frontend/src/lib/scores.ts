@@ -12,17 +12,20 @@ export interface Nivel {
   descripcion: string;
   /** Puntaje general mínimo (0–100) para alcanzar el nivel. */
   minimo: number;
+  /** Velocidad mínima (palabras por minuto) para alcanzar el nivel. */
+  ppmMin: number;
   personaje: Personaje;
   mensaje: string;
 }
 
-/** De mejor a peor. */
+/** Niveles por defecto (de mejor a peor). Los personajes y mensajes son fijos; el resto se configura en la rúbrica. */
 export const NIVELES: Nivel[] = [
   {
     id: 'excelente',
     etiqueta: 'Excelente',
     descripcion: 'Lee con claridad, buen ritmo y casi sin errores.',
     minimo: 90,
+    ppmMin: 85,
     personaje: 'carlos',
     mensaje: '¡Leíste de maravilla!',
   },
@@ -31,6 +34,7 @@ export const NIVELES: Nivel[] = [
     etiqueta: 'Muy bien',
     descripcion: 'Lee con seguridad; solo algunas palabras por pulir.',
     minimo: 75,
+    ppmMin: 60,
     personaje: 'vivi',
     mensaje: '¡Muy bien! Ya lees con mucha seguridad.',
   },
@@ -39,6 +43,7 @@ export const NIVELES: Nivel[] = [
     etiqueta: 'En camino',
     descripcion: 'Lee la mayoría de las palabras; sigue practicando el ritmo.',
     minimo: 60,
+    ppmMin: 30,
     personaje: 'lalo',
     mensaje: '¡Vas muy bien! Cada día lees mejor.',
   },
@@ -47,15 +52,11 @@ export const NIVELES: Nivel[] = [
     etiqueta: 'Practicando',
     descripcion: 'Está empezando a reconocer las palabras completas.',
     minimo: 0,
+    ppmMin: 0,
     personaje: 'greta',
     mensaje: '¡Buen comienzo! Sigamos practicando juntos.',
   },
 ];
-
-export function nivelIndex(score: number): number {
-  const i = NIVELES.findIndex((n) => score >= n.minimo);
-  return i === -1 ? NIVELES.length - 1 : i;
-}
 
 /** Números con coma decimal, como se escriben en Chile. */
 export const num = (valor: number, decimales = 1): string =>

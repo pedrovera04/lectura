@@ -362,7 +362,7 @@ details.bloque-propio[open] summary { margin-bottom: var(--e4); }
 .campo--estrecho { max-width: 22rem; }
 label { font-weight: 700; font-size: var(--t-sm); color: var(--indigo); }
 .opcional { font-weight: 400; color: var(--texto-suave); }
-input[type="text"], input[type="number"], textarea {
+input[type="text"], input[type="number"], select, textarea {
   background: var(--fondo);
   border: 2px solid var(--borde-fuerte);
   border-radius: var(--radio);
@@ -946,3 +946,32 @@ details.bloque-manual > *:not(summary) { margin-top: var(--e3); }
 .fonemas { display: flex; flex-wrap: wrap; gap: var(--e2); justify-content: center; }
 .fonema { background: var(--celeste-palido); color: #1c7c83; border-radius: var(--e2); padding: 2px var(--e3); font-weight: 800; font-size: var(--t-sm); }
 .fonema--flojo { background: var(--omi-fondo); color: var(--omi-texto); }
+
+/* Rúbrica ---------------------------------------------------------------- */
+select {
+  background: var(--fondo);
+  border: 2px solid var(--borde-fuerte);
+  border-radius: var(--radio);
+  padding: var(--e3) var(--e4);
+  min-height: 52px; width: 100%;
+  font-size: var(--t-base); color: var(--indigo);
+}
+select:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 4px var(--indigo-palido); }
+input:disabled { background: var(--indigo-palido); color: var(--texto-suave); cursor: not-allowed; }
+.rubrica__personaje { width: 110px; height: auto; }
+.rubrica__niveles { display: grid; gap: var(--e4); }
+.rubrica__nivel {
+  border: 3px solid var(--borde); border-radius: var(--radio-lg);
+  padding: var(--e4); box-shadow: var(--sombra-suave);
+  display: flex; flex-direction: column; gap: var(--e3);
+}
+.rubrica__cabecera { display: flex; align-items: center; justify-content: space-between; }
+.rubrica__cabecera img { width: 64px; height: 64px; }
+.rubrica__estrellas { color: #f2ae00; font-size: var(--t-md); letter-spacing: 2px; }
+.rubrica__numeros { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e3); }
+.rubrica__errores { margin: 0; padding-left: var(--e5); }
+.rubrica__ok {
+  background: var(--celeste-palido); border: 2px solid var(--celeste);
+  border-radius: var(--radio); padding: var(--e3) var(--e4);
+  font-weight: 700; color: #1c7c83;
+}

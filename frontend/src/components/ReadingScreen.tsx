@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Passage } from '../lib/passages';
 import { useRecorder } from '../hooks/useRecorder';
 import type { Recording } from '../services/recorder';
+import { VolumeMeter } from './VolumeMeter';
 import { formatTime, img, num, type Personaje } from '../lib/scores';
 
 interface Props {
@@ -11,7 +12,7 @@ interface Props {
 }
 
 export function ReadingScreen({ passage, onBack, onEvaluate }: Props) {
-  const { status, seconds, error, start, stop, reset } = useRecorder();
+  const { status, seconds, error, analyser, start, stop, reset } = useRecorder();
   const [recording, setRecording] = useState<Recording | null>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const grabando = status === 'recording';
@@ -94,6 +95,8 @@ export function ReadingScreen({ passage, onBack, onEvaluate }: Props) {
           </svg>
           <span className="btn-rec__texto">{grabando ? 'Detener' : recording ? 'Grabar de nuevo' : 'Grabar'}</span>
         </button>
+
+        {grabando && analyser && <VolumeMeter analyser={analyser} />}
 
         {error && <p className="error" role="alert">{error}</p>}
 

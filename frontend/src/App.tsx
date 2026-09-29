@@ -3,16 +3,19 @@ import { Footer, Header, type Paso } from './components/Header';
 import { StartScreen } from './components/StartScreen';
 import { ReadingScreen } from './components/ReadingScreen';
 import { ErrorView, Loading } from './components/Loading';
+import { RubricScreen } from './components/RubricScreen';
+import { borrarRubrica, cargarRubrica, guardarRubrica, RUBRICA_POR_DEFECTO, type Rubric } from './lib/rubric';
 import { ResultsScreen } from './components/ResultsScreen';
 import { getRandomPassage, PASSAGES, type Passage } from './lib/passages';
 import { evaluateReading } from './services/api';
 import type { Recording } from './services/recorder';
 import type { AssessmentResult } from './types/assessment';
 
-type Screen = 'start' | 'reading' | 'processing' | 'results' | 'error';
+type Screen = 'start' | 'rubric' | 'reading' | 'processing' | 'results' | 'error';
 
 const PASO: Record<Screen, Paso> = {
   start: 'inicio',
+  rubric: 'inicio',
   reading: 'lectura',
   processing: 'resultados',
   results: 'resultados',
@@ -26,6 +29,7 @@ export default function App() {
   const [result, setResult] = useState<AssessmentResult | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [lastRecording, setLastRecording] = useState<Recording | null>(null);
+  const [rubric, setRubric] = useState<Rubric>(() => cargarRubrica());
   const [readingKey, setReadingKey] = useState(0);
 
   useEffect(() => {
@@ -69,7 +73,21 @@ export default function App() {
     <>
       <Header paso={PASO[screen]} />
       <main className="contenedor" id="principal">
-        {screen === 'start' && <StartScreen onStart={handleStart} />}
+        {screen === 'start' && <StartScreen onStart={handleStart} onRubric={() => setScreen('rubric')} />}
+        {screen === 'rubric' && (
+          <RubricScreen
+            rubric={rubric}
+            onSave={(r) => {
+              guardarRubrica(r);
+              setRubric(r);
+            }}
+            onReset={() => {
+              borrarRubrica();
+              setRubric(RUBRICA_POR_DEFECTO);
+            }}
+            onBack={() => setScreen('start')}
+          />
+        )}
         {screen === 'reading' && (
           <ReadingScreen
             key={readingKey}
@@ -89,6 +107,7 @@ export default function App() {
         {screen === 'results' && result && (
           <ResultsScreen
             result={result}
+            rubric={rubric}
             passageId={passage.id}
             studentCode={studentCode}
             onTryAgain={goReading}

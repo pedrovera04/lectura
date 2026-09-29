@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AssessmentResult, WordResult } from '../types/assessment';
-import { NIVELES, PALETA_MARCA, img, nivelIndex, num } from '../lib/scores';
+import { PALETA_MARCA, img, num } from '../lib/scores';
+import { METRICAS, clasificar, nivelesDe, puntajeDe, type Rubric } from '../lib/rubric';
 import { WordDetailModal } from './WordDetailModal';
 
 interface Props {
   result: AssessmentResult;
+  rubric: Rubric;
   passageId: string;
   studentCode: string;
   onTryAgain: () => void;
   onNewText: () => void;
 }
 
-const META_VELOCIDAD = 85; // palabras por minuto de referencia para lectura fluida
+const META_POR_DEFECTO = 85; // si la rúbrica no exige velocidad al mejor nivel
 
 const ICONO_ESTRELLA = (
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -80,13 +82,16 @@ function lanzarConfeti() {
   window.setTimeout(() => capa.remove(), 4000);
 }
 
-export function ResultsScreen({ result, passageId, studentCode, onTryAgain, onNewText }: Props) {
+export function ResultsScreen({ result, rubric, passageId, studentCode, onTryAgain, onNewText }: Props) {
   const [selected, setSelected] = useState<WordResult | null>(null);
   const [animate, setAnimate] = useState(false);
   const titleRef = useRef<HTMLHeadingElement>(null);
 
-  const score = result.pronunciationScore;
-  const indice = nivelIndex(score);
+  const NIVELES = nivelesDe(rubric);
+  const score = puntajeDe(rubric, result);
+  const metricaNombre = METRICAS.find((m) => m.id === rubric.metrica)?.etiqueta.toLowerCase() ?? 'pronunciación';
+  const indice = clasificar(rubric, result);
+  const META_VELOCIDAD = NIVELES[0].ppmMin || META_POR_DEFECTO;
   const nivel = NIVELES[indice];
   const estrellas = NIVELES.length - indice;
   const tokens = buildTokens(result);
@@ -110,6 +115,12 @@ export function ResultsScreen({ result, passageId, studentCode, onTryAgain, onNe
   }, [indice]);
 
   const siguiente = indice > 0 ? NIVELES[indice - 1] : null;
+  const faltan: string[] = [];
+  if (siguiente) {
+    if (score < siguiente.minimo) faltan.push(`${siguiente.minimo} % de ${metricaNombre} (hoy ${num(score, 0)} %)`);
+    if (result.wordsPerMinute < siguiente.ppmMin)
+      faltan.push(`${siguiente.ppmMin} palabras por minuto (hoy ${num(result.wordsPerMinute, 0)})`);
+  }
 
   // Velocidad
   const escalaMax = Math.max(META_VELOCIDAD * 1.35, result.wordsPerMinute * 1.1, 1);
@@ -121,6 +132,7 @@ export function ResultsScreen({ result, passageId, studentCode, onTryAgain, onNe
     const datos = {
       generadoEn: new Date().toISOString(),
       estudiante: studentCode || null,
+      rubrica: { ...rubric, nivelAlcanzado: NIVELES[indice].etiqueta, puntajeUsado: score },
       textoId: passageId,
       ...result,
     };
@@ -167,14 +179,13 @@ export function ResultsScreen({ result, passageId, studentCode, onTryAgain, onNe
             ))}
           </div>
           <p className="logro__mensaje">{result.feedback.headline || nivel.mensaje}</p>
-          <p className="logro__etiqueta">Resultado general</p>
+          <p className="logro__etiqueta">Calidad lectora</p>
           <p className="logro__nivel" id="nivel-valor">{nivel.etiqueta} · {num(score, 0)} %</p>
           <p className="logro__descripcion">{nivel.descripcion}</p>
           <p className="logro__meta">
             {siguiente ? (
               <>
-                <strong>Próxima meta, {siguiente.etiqueta}:</strong> llegar a {siguiente.minimo} % de
-                pronunciación (hoy {num(score, 0)} %).
+                <strong>Próxima meta, {siguiente.etiqueta}:</strong> {faltan.join(' y ')}.
               </>
             ) : (
               <>

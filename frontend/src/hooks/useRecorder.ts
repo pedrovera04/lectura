@@ -7,6 +7,7 @@ interface UseRecorderResult {
   status: RecorderStatus;
   seconds: number;
   error: string | null;
+  analyser: AnalyserNode | null;
   start: () => Promise<void>;
   stop: () => Promise<Recording | null>;
   reset: () => void;
@@ -22,6 +23,7 @@ export function useRecorder(): UseRecorderResult {
   const [status, setStatus] = useState<RecorderStatus>('idle');
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
 
   const clearTimer = () => {
     if (timerRef.current !== null) {
@@ -41,6 +43,7 @@ export function useRecorder(): UseRecorderResult {
       return;
     }
     recorderRef.current = recorder;
+    setAnalyser(recorder.analyser);
     setStatus('recording');
     timerRef.current = window.setInterval(() => setSeconds((s) => s + 1), 1000);
   }, []);
@@ -50,6 +53,7 @@ export function useRecorder(): UseRecorderResult {
     const recorder = recorderRef.current;
     recorderRef.current = null;
     setStatus('idle');
+    setAnalyser(null);
     if (!recorder) return null;
     try {
       return await recorder.stop();
@@ -63,6 +67,7 @@ export function useRecorder(): UseRecorderResult {
     clearTimer();
     setSeconds(0);
     setStatus('idle');
+    setAnalyser(null);
     setError(null);
     recorderRef.current?.cancel();
     recorderRef.current = null;
@@ -76,5 +81,5 @@ export function useRecorder(): UseRecorderResult {
     };
   }, []);
 
-  return { status, seconds, error, start, stop, reset };
+  return { status, seconds, error, analyser, start, stop, reset };
 }

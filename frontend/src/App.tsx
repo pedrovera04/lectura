@@ -1,34 +1,56 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Footer, Header, type Paso } from './components/Header';
 import { StartScreen } from './components/StartScreen';
 import { ReadingScreen } from './components/ReadingScreen';
-import { ProcessingScreen } from './components/ProcessingScreen';
+import { ErrorView, Loading } from './components/Loading';
 import { ResultsScreen } from './components/ResultsScreen';
-import { getRandomPassage, type Passage } from './lib/passages';
+import { getRandomPassage, PASSAGES, type Passage } from './lib/passages';
 import { evaluateReading } from './services/api';
 import type { Recording } from './services/recorder';
 import type { AssessmentResult } from './types/assessment';
 
 type Screen = 'start' | 'reading' | 'processing' | 'results' | 'error';
 
+const PASO: Record<Screen, Paso> = {
+  start: 'inicio',
+  reading: 'lectura',
+  processing: 'resultados',
+  results: 'resultados',
+  error: 'resultados',
+};
+
 export default function App() {
   const [screen, setScreen] = useState<Screen>('start');
-  const [passage, setPassage] = useState<Passage>(() => getRandomPassage());
+  const [passage, setPassage] = useState<Passage>(PASSAGES[0]);
+  const [studentCode, setStudentCode] = useState('');
   const [result, setResult] = useState<AssessmentResult | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [lastRecording, setLastRecording] = useState<Recording | null>(null);
+  const [readingKey, setReadingKey] = useState(0);
 
-  const handleStart = () => {
-    setPassage(getRandomPassage());
+  useEffect(() => {
+    document.body.dataset.pantalla = PASO[screen];
+    window.scrollTo(0, 0);
+  }, [screen]);
+
+  const goReading = () => {
+    setResult(null);
+    setLastRecording(null);
+    setReadingKey((k) => k + 1);
     setScreen('reading');
   };
 
-  const handleFinish = async (recording: Recording) => {
+  const handleStart = (chosen: Passage, code: string) => {
+    setPassage(chosen);
+    setStudentCode(code);
+    goReading();
+  };
+
+  const evaluate = async (recording: Recording) => {
+    setLastRecording(recording);
     setScreen('processing');
     try {
-      const assessment = await evaluateReading({
-        audio: recording.blob,
-        referenceText: passage.text,
-      });
-      setResult(assessment);
+      setResult(await evaluateReading({ audio: recording.blob, referenceText: passage.text }));
       setScreen('results');
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : 'Ocurrió un problema inesperado.');
@@ -36,54 +58,45 @@ export default function App() {
     }
   };
 
-  const handleTryAgain = () => {
-    setResult(null);
-    setScreen('reading'); // mismo texto
-  };
-
   const handleNewText = () => {
     setResult(null);
-    setPassage(getRandomPassage(passage.id));
+    setPassage(passage.id === 'propio' ? getRandomPassage() : getRandomPassage(passage.id));
+    setReadingKey((k) => k + 1);
     setScreen('reading');
   };
 
   return (
-    <div className="min-h-screen px-4 py-8 sm:py-12">
-      <main className="mx-auto w-full max-w-4xl">
+    <>
+      <Header paso={PASO[screen]} />
+      <main className="contenedor" id="principal">
         {screen === 'start' && <StartScreen onStart={handleStart} />}
-
-        {screen === 'reading' && <ReadingScreen passage={passage} onFinish={handleFinish} />}
-
-        {screen === 'processing' && <ProcessingScreen />}
-
+        {screen === 'reading' && (
+          <ReadingScreen
+            key={readingKey}
+            passage={passage}
+            onBack={() => setScreen('start')}
+            onEvaluate={evaluate}
+          />
+        )}
+        {screen === 'processing' && <Loading />}
+        {screen === 'error' && (
+          <ErrorView
+            message={errorMessage}
+            onRetry={() => (lastRecording ? evaluate(lastRecording) : goReading())}
+            onBack={() => setScreen('start')}
+          />
+        )}
         {screen === 'results' && result && (
           <ResultsScreen
             result={result}
-            onTryAgain={handleTryAgain}
+            passageId={passage.id}
+            studentCode={studentCode}
+            onTryAgain={goReading}
             onNewText={handleNewText}
           />
         )}
-
-        {screen === 'error' && (
-          <div className="flex min-h-[70vh] flex-col items-center justify-center text-center animate-pop-in">
-            <div className="mb-6 text-7xl" aria-hidden>
-              😕
-            </div>
-            <h2 className="mb-3 text-3xl font-extrabold text-brand-700">Algo salió mal</h2>
-            <p className="mb-8 max-w-md text-lg font-semibold text-brand-900/70">{errorMessage}</p>
-            <button
-              onClick={() => setScreen('reading')}
-              className="rounded-full bg-brand-500 px-8 py-4 text-xl font-bold text-white shadow-lg transition hover:scale-105 hover:bg-brand-600 active:scale-95"
-            >
-              Volver a intentar
-            </button>
-          </div>
-        )}
       </main>
-
-      <footer className="mx-auto mt-10 max-w-4xl text-center text-sm font-semibold text-brand-900/40">
-        Evaluación de lectura con Azure Speech · Hecho con cariño para aprender a leer
-      </footer>
-    </div>
+      <Footer />
+    </>
   );
 }

@@ -56,6 +56,8 @@ export async function evaluateReading(
       fluencyScore: raw.fluencyScore,
       completenessScore: raw.completenessScore,
       prosodyScore: raw.prosodyScore,
+      totalScore: raw.totalScore,
+      wordStats: raw.wordStats,
       wordsPerMinute: raw.wordsPerMinute,
       duration: raw.duration,
       referenceText,

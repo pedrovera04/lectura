@@ -97,7 +97,8 @@ export function nivelesDe(r: Rubric): Nivel[] {
 }
 
 export function puntajeDe(r: Rubric, res: AssessmentResult): number {
-  return res[r.metrica] ?? res.pronunciationScore;
+  // Nunca supera el puntaje sobre el total de palabras: lo omitido o mal dicho pesa.
+  return Math.min(res[r.metrica] ?? res.pronunciationScore, res.totalScore);
 }
 
 /** El mejor nivel cuyo puntaje Y velocidad mínimos se cumplen a la vez. */

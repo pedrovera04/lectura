@@ -28,6 +28,7 @@ const normalize = (w: string) =>
 interface Token {
   display: string;
   word: WordResult | null;
+  omitted: boolean;
 }
 
 function buildTokens(result: AssessmentResult): Token[] {
@@ -37,17 +38,20 @@ function buildTokens(result: AssessmentResult): Token[] {
     .trim()
     .split(/\s+/)
     .map((raw) => {
-      if (!normalize(raw)) return { display: raw, word: null };
+      if (!normalize(raw)) return { display: raw, word: null, omitted: false };
       const word = refWords[idx] ?? null;
       if (word) idx += 1;
-      return { display: raw, word };
+      // Sin palabra evaluada: Azure no la oyó, o sea que faltó decirla.
+      return { display: raw, word, omitted: word === null };
     });
 }
 
 const CON_DETALLE: WordResult['errorType'][] = ['Mispronunciation', 'UnexpectedBreak', 'MissingBreak', 'Monotone'];
 
-function claseToken(word: WordResult | null): string {
-  switch (word?.errorType) {
+function claseToken(word: WordResult | null, omitted: boolean): string {
+  if (omitted) return 'p p--omision';
+  if (!word) return 'p';
+  switch (word.errorType) {
     case 'Mispronunciation':
       return 'p p--sustitucion';
     case 'Omission':
@@ -55,7 +59,7 @@ function claseToken(word: WordResult | null): string {
     case 'UnexpectedBreak':
     case 'MissingBreak':
     case 'Monotone':
-      return 'p p--pausa';
+      return 'p p--correcta p--pausa';
     default:
       return 'p p--correcta';
   }
@@ -97,11 +101,12 @@ export function ResultsScreen({ result, rubric, passageId, studentCode, onTryAga
   const tokens = buildTokens(result);
   const insertions = result.words.filter((w) => w.errorType === 'Insertion');
 
+  const stats = result.wordStats;
   const conteo = {
-    correcta: result.words.filter((w) => w.errorType === 'None').length,
-    mejorar: result.words.filter((w) => CON_DETALLE.includes(w.errorType)).length,
-    omitida: result.words.filter((w) => w.errorType === 'Omission').length,
-    agregada: insertions.length,
+    correcta: stats.correct,
+    mejorar: stats.mispronounced,
+    omitida: stats.omitted,
+    agregada: stats.inserted,
   };
 
   useEffect(() => {
@@ -126,7 +131,7 @@ export function ResultsScreen({ result, rubric, passageId, studentCode, onTryAga
   const escalaMax = Math.max(META_VELOCIDAD * 1.35, result.wordsPerMinute * 1.1, 1);
   const radio = 44;
   const circ = 2 * Math.PI * radio;
-  const precision = Math.min(100, Math.max(0, result.accuracyScore));
+  const precision = stats.total ? Math.round((stats.correct / stats.total) * 100) : 0;
 
   const descargar = () => {
     const datos = {
@@ -160,9 +165,9 @@ export function ResultsScreen({ result, rubric, passageId, studentCode, onTryAga
   ];
 
   const leyenda = [
-    { clase: 'correcta', texto: `Bien leída (${conteo.correcta})` },
-    { clase: 'sustitucion', texto: `Por mejorar (${conteo.mejorar})` },
-    { clase: 'omision', texto: `Omitida (${conteo.omitida})` },
+    { clase: 'correcta', texto: `Bien dicha (${conteo.correcta})` },
+    { clase: 'sustitucion', texto: `Mal dicha (${conteo.mejorar})` },
+    { clase: 'omision', texto: `Faltó decir (${conteo.omitida})` },
     { clase: 'insercion', texto: `Agregada (${conteo.agregada})` },
   ];
 
@@ -244,9 +249,11 @@ export function ResultsScreen({ result, rubric, passageId, studentCode, onTryAga
               />
             </svg>
             <div className="kpi__texto">
-              <p className="kpi__titulo">Precisión</p>
-              <p className="kpi__valor">{num(result.accuracyScore, 0)}<span className="kpi__unidad">%</span></p>
-              <p className="kpi__nota">Qué tan bien sonó cada palabra que leíste.</p>
+              <p className="kpi__titulo">Palabras bien leídas</p>
+              <p className="kpi__valor">{precision}<span className="kpi__unidad">%</span></p>
+              <p className="kpi__nota">
+                {stats.correct} de {stats.total} palabras del texto. Lo que se omite o se dice mal cuenta como error.
+              </p>
             </div>
           </article>
         </div>
@@ -272,20 +279,20 @@ export function ResultsScreen({ result, rubric, passageId, studentCode, onTryAga
           </ul>
           <div className="diff">
             {tokens.map((t, i) => {
-              const clickable = t.word && CON_DETALLE.includes(t.word.errorType);
+              const clickable = !t.omitted && t.word && CON_DETALLE.includes(t.word.errorType);
               return (
                 <span key={i}>
                   {clickable ? (
                     <button
                       type="button"
-                      className={`${claseToken(t.word)} p--boton`}
+                      className={`${claseToken(t.word, t.omitted)} p--boton`}
                       title="Toca para ver el detalle"
                       onClick={() => t.word && setSelected(t.word)}
                     >
                       {t.display}
                     </button>
                   ) : (
-                    <span className={claseToken(t.word)} title={t.word?.errorType === 'Omission' ? 'No se leyó' : undefined}>
+                    <span className={claseToken(t.word, t.omitted)} title={t.omitted ? 'Faltó decir esta palabra' : undefined}>
                       {t.display}
                     </span>
                   )}{' '}

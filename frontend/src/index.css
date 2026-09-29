@@ -74,7 +74,10 @@
   /* Comparación palabra por palabra -------------------------------------- */
   --sust-fondo: #fde9a8;  --sust-texto: #5a3d00;
   --omi-fondo: #fbe0e1;   --omi-texto: #a00f1a;
-  --ins-fondo: #e2edf9;   --ins-texto: #1f5da3;
+  --ins-fondo: #ffe1d6;   --ins-texto: #9c3407;
+  --ok-fondo: #d9f3df;    --ok-texto: #12602a;
+  --mal-fondo: #fbd5d8;   --mal-texto: #a00f1a;
+  --falta-fondo: #2f6db5; --falta-texto: #ffffff; --falta-borde: #9cc2ea;
 
   /* Espaciado (escala de 4) ---------------------------------------------- */
   --e1: 4px;  --e2: 8px;  --e3: 12px; --e4: 16px; --e5: 20px;
@@ -812,13 +815,12 @@ body.grabando .cronometro { background: var(--rojo-palido); color: var(--rojo); 
   background-clip: border-box, padding-box;
 }
 .p { border-radius: var(--e2); padding: 3px 6px; white-space: nowrap; }
-.p--correcta { color: var(--indigo); }
+.p--correcta { background: var(--ok-fondo); color: var(--ok-texto); font-weight: 800; }
 .p--sustitucion {
-  background: var(--sust-fondo); color: var(--sust-texto);
-  text-decoration: underline dotted; text-underline-offset: 5px; font-weight: 800;
+  background: var(--mal-fondo); color: var(--mal-texto);
+  text-decoration: underline wavy; text-underline-offset: 5px; font-weight: 800;
 }
-.p--sustitucion .dicho { font-size: var(--t-xs); font-weight: 800; }
-.p--omision { background: var(--omi-fondo); color: var(--omi-texto); text-decoration: line-through; font-weight: 800; }
+.p--omision { background: var(--falta-fondo); color: var(--falta-texto); font-weight: 800; box-shadow: 0 0 0 2px var(--falta-borde); }
 .p--insercion {
   background: var(--ins-fondo); color: var(--ins-texto);
   text-decoration: underline; text-underline-offset: 5px; font-weight: 800;
@@ -911,7 +913,7 @@ details.bloque-manual > *:not(summary) { margin-top: var(--e3); }
    ====================================================================== */
 .p--boton { font: inherit; border: 0; cursor: pointer; }
 .p--boton:hover { filter: brightness(0.95); text-decoration: underline; }
-.p--pausa { background: var(--ins-fondo); color: var(--ins-texto); font-weight: 800; }
+.p--pausa { text-decoration: underline dotted; text-underline-offset: 5px; }
 
 .consejos {
   background: var(--amarillo-palido);

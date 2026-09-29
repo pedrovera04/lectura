@@ -25,6 +25,14 @@ export interface WordResult {
   phonemes?: PhonemeResult[];
 }
 
+export interface WordStats {
+  total: number;
+  correct: number;
+  mispronounced: number;
+  omitted: number;
+  inserted: number;
+}
+
 export interface Feedback {
   headline: string;
   message: string;
@@ -38,6 +46,9 @@ export interface AssessmentResult {
   fluencyScore: number;
   completenessScore: number;
   prosodyScore: number | null;
+  /** Puntaje riguroso sobre el total de palabras del texto. */
+  totalScore: number;
+  wordStats: WordStats;
   wordsPerMinute: number;
   duration: number;
   referenceText: string;

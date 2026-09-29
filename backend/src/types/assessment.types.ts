@@ -36,6 +36,18 @@ export interface WordResult {
   phonemes?: PhonemeResult[];
 }
 
+/** Conteo de palabras sobre el TOTAL del texto de referencia. */
+export interface WordStats {
+  /** Palabras del texto de referencia. */
+  total: number;
+  correct: number;
+  mispronounced: number;
+  /** Incluye las palabras del final que nunca se leyeron. */
+  omitted: number;
+  /** Palabras agregadas que no estaban en el texto. */
+  inserted: number;
+}
+
 /** Feedback educativo dirigido al niño. */
 export interface Feedback {
   /** Frase de encabezado, p. ej. "¡Muy bien!". */
@@ -57,6 +69,9 @@ export interface AssessmentResult {
   /** null si Azure no entregó prosodia para este audio. */
   prosodyScore: number | null;
 
+  /** Puntaje riguroso 0–100 sobre el total de palabras: lo omitido o mal dicho suma 0. */
+  totalScore: number;
+  wordStats: WordStats;
   /** Velocidad de lectura en palabras por minuto. */
   wordsPerMinute: number;
   /** Duración del audio en segundos. */

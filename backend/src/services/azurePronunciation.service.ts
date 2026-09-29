@@ -2,7 +2,7 @@ import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 import { env } from '../config/env.js';
 import { parseWav } from './wav.service.js';
 import { countWords } from '../utils/text.js';
-import type { PhonemeResult, WordErrorType, WordResult } from '../types/assessment.types.js';
+import type { PhonemeResult, WordErrorType, WordResult, WordStats } from '../types/assessment.types.js';
 
 /**
  * Servicio que ejecuta Azure Speech **Pronunciation Assessment** sobre un audio WAV.
@@ -65,6 +65,8 @@ export interface RawAssessment {
   fluencyScore: number;
   completenessScore: number;
   prosodyScore: number | null;
+  totalScore: number;
+  wordStats: WordStats;
   wordsPerMinute: number;
   duration: number;
   recognizedText: string;
@@ -275,25 +277,49 @@ function aggregate(
 
   // Completitud: palabras de referencia que sí se leyeron.
   const referenceWordCount = Math.max(1, countWords(referenceText));
-  const omittedCount = allWords.filter(
-    (w) => (w.PronunciationAssessment?.ErrorType ?? 'None') === 'Omission',
-  ).length;
-  const completenessScore = Math.round(
-    Math.min(100, Math.max(0, ((referenceWordCount - omittedCount) / referenceWordCount) * 100)),
-  );
-
-  // Puntaje global de pronunciación (ponderación documentada por Microsoft).
-  const pronunciationScore = Math.round(
-    prosodyScore !== null
-      ? accuracyScore * 0.4 + prosodyScore * 0.2 + fluencyScore * 0.2 + completenessScore * 0.2
-      : accuracyScore * 0.6 + fluencyScore * 0.2 + completenessScore * 0.2,
-  );
-
-  // Palabras por minuto: palabras de referencia efectivamente leídas.
-  const readWords = allWords.filter((w) => {
+  // Solo cuentan como leídas las palabras de referencia que Azure oyó. Las del final que
+  // nunca se dijeron pueden no venir en la lista, así que se calculan por diferencia.
+  const heard = allWords.filter((w) => {
     const t = w.PronunciationAssessment?.ErrorType ?? 'None';
     return t !== 'Omission' && t !== 'Insertion';
-  }).length;
+  });
+  const mispronounced = heard.filter(
+    (w) => w.PronunciationAssessment?.ErrorType === 'Mispronunciation',
+  ).length;
+  const correctWords = heard.filter(
+    (w) => w.PronunciationAssessment?.ErrorType !== 'Mispronunciation',
+  );
+  const inserted = allWords.filter(
+    (w) => w.PronunciationAssessment?.ErrorType === 'Insertion',
+  ).length;
+  const readCount = Math.min(referenceWordCount, heard.length);
+  const completenessScore = Math.round((readCount / referenceWordCount) * 100);
+
+  // Puntaje riguroso: se reparte sobre TODAS las palabras del texto. Lo omitido o mal
+  // dicho aporta 0; lo bien dicho aporta la precisión de esa palabra.
+  const credit = correctWords.reduce(
+    (acc, w) => acc + (w.PronunciationAssessment?.AccuracyScore ?? 100) / 100,
+    0,
+  );
+  const totalScore = Math.round(Math.min(100, (credit / referenceWordCount) * 100));
+  const wordStats: WordStats = {
+    total: referenceWordCount,
+    correct: Math.min(referenceWordCount, correctWords.length),
+    mispronounced: Math.min(referenceWordCount, mispronounced),
+    omitted: Math.max(0, referenceWordCount - readCount),
+    inserted,
+  };
+
+  // Puntaje global de pronunciación (ponderación documentada por Microsoft).
+  // Se limita por el puntaje riguroso: leer bien 4 palabras de 40 no puede dar una nota alta.
+  const azureOverall =
+    prosodyScore !== null
+      ? accuracyScore * 0.4 + prosodyScore * 0.2 + fluencyScore * 0.2 + completenessScore * 0.2
+      : accuracyScore * 0.6 + fluencyScore * 0.2 + completenessScore * 0.2;
+  const pronunciationScore = Math.round(Math.min(azureOverall, totalScore));
+
+  // Palabras por minuto: palabras de referencia efectivamente leídas.
+  const readWords = heard.length;
   const wordsPerMinute =
     durationSeconds > 0 ? Math.round(readWords / (durationSeconds / 60)) : 0;
 
@@ -329,6 +355,8 @@ function aggregate(
     fluencyScore,
     completenessScore,
     prosodyScore,
+    totalScore,
+    wordStats,
     wordsPerMinute,
     duration: Math.round(durationSeconds),
     recognizedText,
